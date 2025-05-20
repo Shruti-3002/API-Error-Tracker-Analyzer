@@ -1,23 +1,20 @@
 package com.project.API.Error.Tracker.Analyzer.Controller;
 
-import com.project.API.Error.Tracker.Analyzer.DTO.ErrorLogRequest;
-import com.project.API.Error.Tracker.Analyzer.Modal.ErrorLog;
-import com.project.API.Error.Tracker.Analyzer.Service.Interface.ErrorLogService;
+import com.project.API.Error.Tracker.Analyzer.Modal.ApiResponse;
+import com.project.API.Error.Tracker.Analyzer.Service.ApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api")
 public class ApiController {
     @Autowired
-    private ErrorLogService errorLogService;
+    private ApiService apiService;
 
     @PostMapping("/logError")
-    public ResponseEntity<ErrorLog> logError(@RequestBody ErrorLogRequest request) {
-        return ResponseEntity.ok(errorLogService.saveError(request));
+    public void logError(@RequestBody ApiResponse request) {
+        apiService.saveErrorLog(request);
     }
 
     @PostMapping("/runApi")
