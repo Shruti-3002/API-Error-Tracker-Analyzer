@@ -1,6 +1,8 @@
 package com.project.API.Error.Tracker.Analyzer.Service.Interface;
 import com.project.API.Error.Tracker.Analyzer.DTO.ErrorLogRequest;
-import com.project.API.Error.Tracker.Analyzer.Entity.ErrorLog;
+import com.project.API.Error.Tracker.Analyzer.Modal.ErrorLog;
+
+import java.util.List;
 
 public interface ErrorLogService {
 
