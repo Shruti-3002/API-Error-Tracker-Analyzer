@@ -5,26 +5,24 @@ import com.project.API.Error.Tracker.Analyzer.Modal.ErrorLog;
 import com.project.API.Error.Tracker.Analyzer.Service.Interface.ErrorLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-public class ErrorLogController {
+@RestController
+@RequestMapping("/api")
+public class ApiController {
     @Autowired
     private ErrorLogService errorLogService;
 
-    @PostMapping
+    @PostMapping("/logError")
     public ResponseEntity<ErrorLog> logError(@RequestBody ErrorLogRequest request) {
         return ResponseEntity.ok(errorLogService.saveError(request));
     }
 
-    @GetMapping
-    public ResponseEntity<List<ErrorLog>> getAllErrors(
-            @RequestParam(required = false) String service,
-            @RequestParam(required = false) Integer statusCode) {
-        return ResponseEntity.ok(errorLogService.getFilteredErrors(service, statusCode));
+    @PostMapping("/runApi")
+    public ResponseEntity<String> runApi(@RequestBody String request) {
+        // Simulate running an API and returning a response
+        return ResponseEntity.ok("API executed successfully");
     }
 }
