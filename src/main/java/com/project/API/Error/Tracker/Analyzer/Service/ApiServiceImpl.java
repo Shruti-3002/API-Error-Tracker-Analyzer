@@ -1,14 +1,16 @@
 package com.project.API.Error.Tracker.Analyzer.Service;
 
-import com.project.API.Error.Tracker.Analyzer.Modal.ApiResponse;
-import com.project.API.Error.Tracker.Analyzer.Repository.ApiRepository;
+import com.project.API.Error.Tracker.Analyzer.DAO.ApiAuditDAO;
+import com.project.API.Error.Tracker.Analyzer.Model.APIAuditModel;
+import com.project.API.Error.Tracker.Analyzer.Config.CustomCacheConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import com.project.API.Error.Tracker.Analyzer.Config.CustomCacheConfig;
+
+import java.util.Objects;
+import java.util.UUID;
 
 @Service
 public class ApiServiceImpl implements ApiService {
@@ -17,13 +19,20 @@ public class ApiServiceImpl implements ApiService {
     private RestTemplate restTemplate;
 
     @Autowired
-    private CacheManager cacheManager;
+    private ApiAuditDAO apiAuditDAO;
 
     @Autowired
-    ApiRepository apiRepository;
+    private CacheManager cacheManager;
+
+    private static final String CACHE_NAME = CustomCacheConfig.API_RESPONSE_CACHE;
 
     @Override
-    public ApiResponse runApi(String apiURL, String method, String requestBody) {
+    public APIAuditModel runApi(String apiURL, String method, String requestBody) {
+        APIAuditModel auditModel = new APIAuditModel();
+        auditModel.setApiName("DummyName");
+        auditModel.setApiUrl(apiURL);
+        auditModel.setCreatedAt(java.time.LocalDateTime.now());
+
         try {
             HttpMethod httpMethod = HttpMethod.valueOf(method.toUpperCase());
             HttpHeaders headers = new HttpHeaders();
@@ -33,43 +42,29 @@ public class ApiServiceImpl implements ApiService {
             ResponseEntity<String> response = restTemplate.exchange(
                 apiURL, httpMethod, entity, String.class);
 
-            ApiResponse apiResponse = new ApiResponse(
-                String.valueOf(response.getStatusCodeValue()),
-                response.getBody()
-            );
-            // Store in FILO cache
-            Cache cache = cacheManager.getCache(CustomCacheConfig.API_RESPONSE_CACHE);
-            if (cache != null) {
-                cache.put(System.currentTimeMillis(), apiResponse);
-            }
-            return apiResponse;
+            auditModel.setApiStatusCode(response.getStatusCode().value());
+            auditModel.setResponseMessage(response.getBody());
+
         } catch (Exception ex) {
-            // This error is from the application side, hence we do not log it, handle it such that log error button should be disabled
-            ApiResponse errorResponse = new ApiResponse(
-                "500",
-                "Error occurred while executing API: " + ex.getMessage()
-            );
-            // Store error in cache as well
-            Cache cache = cacheManager.getCache(CustomCacheConfig.API_RESPONSE_CACHE);
-            if (cache != null) {
-                cache.put(System.currentTimeMillis(), errorResponse);
-            }
-            return errorResponse;
+            auditModel.setApiStatusCode(500);
+            auditModel.setResponseMessage("Error occurred while executing API: " + ex.getMessage());
         }
+
+        // Store in cache with a unique key
+        String cacheKey = UUID.randomUUID().toString();
+        Objects.requireNonNull(cacheManager.getCache(CACHE_NAME)).put(cacheKey, auditModel);
+
+        return auditModel;
     }
 
     @Override
-    public void saveErrorLog(ApiResponse apiResponse) {
-        // Retrieve and remove the latest entry from the FILO cache
-        Cache cache = cacheManager.getCache(CustomCacheConfig.API_RESPONSE_CACHE);
-        if (cache != null && cache.getNativeCache() instanceof java.util.concurrent.ConcurrentHashMap) {
-            if (cache instanceof CustomCacheConfig.FiloCache filoCache) {
-                Object latest = filoCache.removeLatest();
-                if (latest instanceof ApiResponse responseToSave) {
-                    apiRepository.save(responseToSave);
-                }
-            }
+    public void saveErrorLog() {
+        // Remove the latest (top) element from the FILO cache and save to DB
+        CustomCacheConfig.FiloCache cache = (CustomCacheConfig.FiloCache) cacheManager.getCache(CACHE_NAME);
+        assert cache != null;
+        APIAuditModel model = (APIAuditModel) cache.removeLatest();
+        if (model != null) {
+            apiAuditDAO.save(model);
         }
     }
 }
-

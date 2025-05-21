@@ -1,6 +1,7 @@
 package com.project.API.Error.Tracker.Analyzer.Controller;
 
-import com.project.API.Error.Tracker.Analyzer.Modal.ApiResponse;
+import com.project.API.Error.Tracker.Analyzer.Model.APIAuditModel;
+import com.project.API.Error.Tracker.Analyzer.Model.APIRunRequestModel;
 import com.project.API.Error.Tracker.Analyzer.Service.ApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,14 +13,16 @@ public class ApiController {
     @Autowired
     private ApiService apiService;
 
-    @PostMapping("/logError")
-    public void logError(@RequestBody ApiResponse request) {
-        apiService.saveErrorLog(request);
+    @GetMapping("/logError")
+    public ResponseEntity<String> logError() {
+        apiService.saveErrorLog();
+        return ResponseEntity.ok("Error logged successfully");
     }
 
     @PostMapping("/runApi")
-    public ResponseEntity<String> runApi(@RequestBody String request) {
+    public ResponseEntity<String> runApi(@RequestBody APIRunRequestModel request) {
         // Simulate running an API and returning a response
-        return ResponseEntity.ok("API executed successfully");
+        APIAuditModel apiAuditModel = apiService.runApi(request.getApiUrl(), request.getApiRequestMethod(), request.getApiRequestBody());
+        return ResponseEntity.ok("API executed successfully. Status Code: " + apiAuditModel.getApiStatusCode() + ", Response: " + apiAuditModel.getResponseMessage());
     }
 }
