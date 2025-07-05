@@ -22,7 +22,7 @@ public class ApiController {
     @PostMapping("/runApi")
     public ResponseEntity<String> runApi(@RequestBody APIRunRequestModel request) {
         // Simulate running an API and returning a response
-        APIAuditModel apiAuditModel = apiService.runApi(request.getApiUrl(), request.getApiRequestMethod(), request.getApiRequestBody());
+        APIAuditModel apiAuditModel = apiService.runApi(request.getApiName(), request.getApiUrl(), request.getApiRequestMethod(), request.getApiRequestBody());
         return ResponseEntity.ok("API executed successfully. Status Code: " + apiAuditModel.getApiStatusCode() + ", Response: " + apiAuditModel.getResponseMessage());
     }
 }

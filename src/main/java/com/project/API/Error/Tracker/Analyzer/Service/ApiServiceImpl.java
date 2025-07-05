@@ -27,9 +27,9 @@ public class ApiServiceImpl implements ApiService {
     private static final String CACHE_NAME = CustomCacheConfig.API_RESPONSE_CACHE;
 
     @Override
-    public APIAuditModel runApi(String apiURL, String method, String requestBody) {
+    public APIAuditModel runApi(String apiName, String apiURL, String method, String requestBody) {
         APIAuditModel auditModel = new APIAuditModel();
-        auditModel.setApiName("DummyName");
+        auditModel.setApiName(apiName);
         auditModel.setApiUrl(apiURL);
         auditModel.setCreatedAt(java.time.LocalDateTime.now());
 
